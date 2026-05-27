@@ -62,7 +62,7 @@ categories:
       - EMERALD
       - NETHERITE_INGOT
   nether:
-    economy: COINSENGINE:blood
+    economy: VAULT
     multiplier: 1.25
     materials:
       - NETHER_STAR
@@ -78,7 +78,7 @@ items:
     economy: VAULT
   NETHER_STAR:
     worth: 1000
-    economy: COINSENGINE:blood
+    economy: VAULT
   SPAWNER:
     worth: 5000
     economy: VAULT

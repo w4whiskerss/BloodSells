@@ -41,7 +41,7 @@ items:
 
   NETHER_STAR:
     worth: 1000
-    economy: COINSENGINE:blood
+    economy: VAULT
 
   SPAWNER:
     worth: 5000
@@ -61,8 +61,8 @@ Supported economy providers:
 | Provider | Economy Key | Notes |
 | --- | --- | --- |
 | Vault | `VAULT` | Works with Vault-backed economies such as EssentialsX Economy |
-| PlayerPoints | `PLAYERPOINTS` or `PLAYERPOINTS:<currency>` | Currency suffix is accepted for config consistency |
-| CoinsEngine | `COINSENGINE:<currency>` | Example: `COINSENGINE:blood` |
+| PlayerPoints | `PLAYERPOINTS` | Uses the provider default |
+| CoinsEngine | `COINSENGINE` | Uses the provider default |
 | ExcellentEconomy | `EXCELLENTECONOMY` | Reflection-backed soft adapter |
 
 Optional integrations:
@@ -100,7 +100,7 @@ Optional integrations:
 5. Reload with:
 
    ```text
-   /worth reload
+   /bloodsells reload
    ```
 
 ## Commands
@@ -113,7 +113,7 @@ Optional integrations:
 | `/sellhandall` | `bloodsells.sellhandall` | Sells every inventory item matching the item in hand |
 | `/worth set <item> <price>` | `bloodsells.worth.set` | Sets an item worth override |
 | `/worth economy <item> <economy>` | `bloodsells.worth.economy` | Sets the economy used by an item |
-| `/worth reload` | `bloodsells.worth.reload` | Reloads config and systems |
+| `/bloodsells reload` | `bloodsells.reload` | Reloads config and systems |
 | `/worth info <item>` | `bloodsells.worth.info` | Shows worth and economy routing for an item |
 | `/worth gui` | `bloodsells.admingui` | Opens the in-game worth editor for the item in hand |
 | `/worth economies` | `bloodsells.worth.info` | Shows detected economy providers |
@@ -146,7 +146,7 @@ settings:
 
 categories:
   nether:
-    economy: COINSENGINE:blood
+    economy: VAULT
     multiplier: 1.25
     materials:
       - NETHER_STAR
@@ -156,7 +156,7 @@ categories:
 items:
   EMERALD:
     worth: 250
-    economy: PLAYERPOINTS:blood
+    economy: VAULT
 ```
 
 This gives you broad category balancing while still allowing exact per-item control.

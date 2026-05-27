@@ -1,5 +1,6 @@
 package dev.bloodworth.bloodsells;
 
+import dev.bloodworth.bloodsells.command.BloodSellsCommand;
 import dev.bloodworth.bloodsells.command.SellCommands;
 import dev.bloodworth.bloodsells.command.WorthCommand;
 import dev.bloodworth.bloodsells.config.BloodConfig;
@@ -93,22 +94,56 @@ public final class BloodSellsPlugin extends JavaPlugin {
             getConfig().set("settings.nbt-aware-pricing", false);
             changed = true;
         }
+        String defaultEconomy = getConfig().getString("settings.default-economy", "");
+        if (defaultEconomy.contains(":")) {
+            getConfig().set("settings.default-economy", defaultEconomy.split(":", 2)[0].trim().toUpperCase(java.util.Locale.ROOT));
+            changed = true;
+        }
         if ("PLAYERPOINTS:blood".equalsIgnoreCase(getConfig().getString("items.EMERALD.economy", ""))) {
             getConfig().set("items.EMERALD.economy", "VAULT");
+            changed = true;
+        }
+        if (getConfig().getString("categories.nether.economy", "").contains(":")) {
+            getConfig().set("categories.nether.economy", "VAULT");
+            changed = true;
+        }
+        if (getConfig().getString("items.NETHER_STAR.economy", "").contains(":")) {
+            getConfig().set("items.NETHER_STAR.economy", "VAULT");
             changed = true;
         }
         if ("EXCELLENTECONOMY".equalsIgnoreCase(getConfig().getString("items.SPAWNER.economy", ""))) {
             getConfig().set("items.SPAWNER.economy", "VAULT");
             changed = true;
         }
+        changed |= stripCurrencySuffixes("items");
+        changed |= stripCurrencySuffixes("categories");
         if (changed) {
             saveConfig();
         }
     }
 
+    private boolean stripCurrencySuffixes(String sectionPath) {
+        org.bukkit.configuration.ConfigurationSection section = getConfig().getConfigurationSection(sectionPath);
+        if (section == null) {
+            return false;
+        }
+        boolean changed = false;
+        for (String key : section.getKeys(false)) {
+            String path = sectionPath + "." + key + ".economy";
+            String value = getConfig().getString(path);
+            if (value != null && value.contains(":")) {
+                getConfig().set(path, value.split(":", 2)[0].trim().toUpperCase(java.util.Locale.ROOT));
+                changed = true;
+            }
+        }
+        return changed;
+    }
+
     private void registerCommands() {
         SellCommands sellCommands = new SellCommands(this);
         WorthCommand worthCommand = new WorthCommand(this);
+        BloodSellsCommand bloodSellsCommand = new BloodSellsCommand(this);
+        registerCommand("bloodsells", "BloodSells main command.", List.of("bsells"), new PaperCommand("bloodsells", bloodSellsCommand));
         registerCommand("sellhand", "Sell the stack in your main hand.", List.of(), new PaperCommand("sellhand", sellCommands));
         registerCommand("sellgui", "Open the BloodSells sell GUI.", List.of(), new PaperCommand("sellgui", sellCommands));
         registerCommand("sellall", "Sell every matching material in your inventory.", List.of(), new PaperCommand("sellall", sellCommands));

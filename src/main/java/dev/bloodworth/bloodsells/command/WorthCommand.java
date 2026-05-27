@@ -35,7 +35,7 @@ public final class WorthCommand implements CommandExecutor, TabCompleter, BloodS
         if (args.length == 0) {
             sender.sendMessage("/worth set <item> <price>");
             sender.sendMessage("/worth economy <item> <economy>");
-            sender.sendMessage("/worth reload");
+            sender.sendMessage("/bloodsells reload");
             sender.sendMessage("/worth info <item>");
             sender.sendMessage("/worth gui");
             sender.sendMessage("/worth economies");
@@ -44,7 +44,6 @@ public final class WorthCommand implements CommandExecutor, TabCompleter, BloodS
         return switch (args[0].toLowerCase(Locale.ROOT)) {
             case "set" -> set(sender, args);
             case "economy" -> economy(sender, args);
-            case "reload" -> reload(sender);
             case "info" -> info(sender, args);
             case "gui" -> gui(sender);
             case "economies" -> economies(sender);
@@ -89,13 +88,6 @@ public final class WorthCommand implements CommandExecutor, TabCompleter, BloodS
         plugin.worthEngine().setEconomy(material, economy);
         plugin.reloadSystems();
         plugin.messages().send(sender, "worth-economy", Map.of("item", material.name(), "economy", economy.raw()));
-        return true;
-    }
-
-    private boolean reload(CommandSender sender) {
-        if (!permission(sender, "bloodsells.worth.reload")) return true;
-        plugin.reloadSystems();
-        sender.sendMessage(plugin.messages().mini(plugin.bloodConfig().string("format.reload", "<green>BloodSells reloaded.")));
         return true;
     }
 
@@ -166,7 +158,7 @@ public final class WorthCommand implements CommandExecutor, TabCompleter, BloodS
     @Override
     public List<String> suggest(CommandSender sender, String name, String[] args) {
         if (args.length == 1) {
-            return List.of("set", "economy", "reload", "info", "gui", "economies").stream().filter(s -> s.startsWith(args[0].toLowerCase(Locale.ROOT))).toList();
+            return List.of("set", "economy", "info", "gui", "economies").stream().filter(s -> s.startsWith(args[0].toLowerCase(Locale.ROOT))).toList();
         }
         if ((args.length == 2 && List.of("set", "economy", "info").contains(args[0].toLowerCase(Locale.ROOT)))) {
             String prefix = args[1].toUpperCase(Locale.ROOT);

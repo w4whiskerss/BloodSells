@@ -26,13 +26,13 @@ permissions:
     default: true
   bloodsells.admin:
     default: op
+  bloodsells.reload:
+    default: op
   bloodsells.admingui:
     default: op
   bloodsells.worth.set:
     default: op
   bloodsells.worth.economy:
-    default: op
-  bloodsells.worth.reload:
     default: op
   bloodsells.worth.info:
     default: op
