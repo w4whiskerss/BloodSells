@@ -1,0 +1,110 @@
+settings:
+  default-economy: VAULT
+  permanent-lore: false
+  display-worth: true
+  nbt-aware-pricing: true
+  enchantment-multiplier: 0.08
+  custom-model-data-multiplier: 1.15
+  shulker-sell-contents-first: true
+  cache-expire-seconds: 300
+  transaction-log: true
+  storage:
+    type: SQLITE # SQLITE or MYSQL
+    mysql:
+      jdbc-url: "jdbc:mysql://localhost:3306/bloodsells"
+      username: "root"
+      password: ""
+
+format:
+  worth-line: "<dark_gray>WORTH: <green><price> <gray><economy_icon>"
+  no-worth: "<red>This item cannot be sold."
+  sold: "<green>Sold <white><amount>x <item></white> for <payouts>."
+  payout-part: "<green><amount> <gray><economy>"
+  actionbar: "<green>+<amount> <gray><economy>"
+  reload: "<green>BloodSells reloaded."
+  missing-provider: "<red>Economy provider <provider> is not available."
+
+economies:
+  VAULT:
+    enabled: true
+    icon: "$"
+    display-name: "Money"
+    format: "$%,.2f"
+  PLAYERPOINTS:
+    enabled: true
+    icon: "◆"
+    display-name: "Points"
+    format: "%,.0f pts"
+  COINSENGINE:
+    enabled: true
+    icon: "✦"
+    display-name: "Coins"
+    format: "%,.2f coins"
+  EXCELLENTECONOMY:
+    enabled: true
+    icon: "⛃"
+    display-name: "Excellent"
+    format: "%,.2f"
+
+categories:
+  ores:
+    economy: VAULT
+    multiplier: 1.0
+    materials:
+      - COAL
+      - IRON_INGOT
+      - GOLD_INGOT
+      - DIAMOND
+      - EMERALD
+      - NETHERITE_INGOT
+  nether:
+    economy: COINSENGINE:blood
+    multiplier: 1.25
+    materials:
+      - NETHER_STAR
+      - BLAZE_ROD
+      - GHAST_TEAR
+
+items:
+  DIAMOND:
+    worth: 500
+    economy: VAULT
+  EMERALD:
+    worth: 250
+    economy: PLAYERPOINTS:blood
+  NETHER_STAR:
+    worth: 1000
+    economy: COINSENGINE:blood
+  SPAWNER:
+    worth: 5000
+    economy: EXCELLENTECONOMY
+
+blacklist:
+  - AIR
+  - BEDROCK
+  - BARRIER
+  - COMMAND_BLOCK
+  - CHAIN_COMMAND_BLOCK
+  - REPEATING_COMMAND_BLOCK
+  - STRUCTURE_BLOCK
+  - STRUCTURE_VOID
+  - DEBUG_STICK
+
+multipliers:
+  permissions:
+    bloodsells.multiplier.vip: 1.25
+    bloodsells.multiplier.mvp: 1.5
+  boosters:
+    global: 1.0
+
+gui:
+  title: "<dark_red>BloodSells"
+  size: 54
+  input-slots: [10,11,12,13,14,15,16,19,20,21,22,23,24,25,28,29,30,31,32,33,34]
+  preview-slot: 49
+  confirm-slot: 53
+  filler-material: BLACK_STAINED_GLASS_PANE
+  confirm-materials:
+    - LIME_STAINED_GLASS_PANE
+    - GREEN_STAINED_GLASS_PANE
+    - EMERALD

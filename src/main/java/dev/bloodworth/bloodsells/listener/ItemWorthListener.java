@@ -1,0 +1,162 @@
+package dev.bloodworth.bloodsells.listener;
+
+import dev.bloodworth.bloodsells.BloodSellsPlugin;
+import dev.bloodworth.bloodsells.worth.WorthResult;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
+import org.bukkit.NamespacedKey;
+import org.bukkit.entity.Player;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
+import org.bukkit.event.Listener;
+import org.bukkit.event.block.BlockBreakEvent;
+import org.bukkit.event.block.BlockPlaceEvent;
+import org.bukkit.event.entity.EntityPickupItemEvent;
+import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.event.inventory.InventoryCloseEvent;
+import org.bukkit.event.inventory.InventoryOpenEvent;
+import org.bukkit.event.player.PlayerDropItemEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
+import org.bukkit.inventory.Inventory;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.persistence.PersistentDataType;
+
+import java.util.ArrayList;
+import java.util.List;
+
+public final class ItemWorthListener implements Listener {
+    private static final PlainTextComponentSerializer PLAIN = PlainTextComponentSerializer.plainText();
+    private final BloodSellsPlugin plugin;
+    private final NamespacedKey marker;
+
+    public ItemWorthListener(BloodSellsPlugin plugin) {
+        this.plugin = plugin;
+        this.marker = new NamespacedKey(plugin, "worth_lore");
+    }
+
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onPickup(EntityPickupItemEvent event) {
+        if (event.getEntity() instanceof Player player) {
+            plugin.getServer().getScheduler().runTask(plugin, () -> injectInventory(player.getInventory()));
+        }
+    }
+
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onBreak(BlockBreakEvent event) {
+        plugin.getServer().getScheduler().runTask(plugin, () -> injectInventory(event.getPlayer().getInventory()));
+    }
+
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onPlace(BlockPlaceEvent event) {
+        plugin.getServer().getScheduler().runTask(plugin, () -> injectInventory(event.getPlayer().getInventory()));
+    }
+
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onOpen(InventoryOpenEvent event) {
+        injectInventory(event.getInventory());
+        if (event.getPlayer() instanceof Player player) {
+            injectInventory(player.getInventory());
+        }
+    }
+
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onClick(InventoryClickEvent event) {
+        plugin.getServer().getScheduler().runTask(plugin, () -> {
+            injectInventory(event.getInventory());
+            if (event.getWhoClicked() instanceof Player player) {
+                injectInventory(player.getInventory());
+            }
+        });
+    }
+
+    @EventHandler(priority = EventPriority.LOWEST)
+    public void onDrop(PlayerDropItemEvent event) {
+        if (!plugin.bloodConfig().permanentLore()) {
+            strip(event.getItemDrop().getItemStack());
+        }
+    }
+
+    @EventHandler
+    public void onClose(InventoryCloseEvent event) {
+        if (!plugin.bloodConfig().permanentLore()) {
+            stripInventory(event.getInventory());
+            if (event.getPlayer() instanceof Player player) {
+                stripInventory(player.getInventory());
+            }
+        }
+    }
+
+    @EventHandler
+    public void onQuit(PlayerQuitEvent event) {
+        if (!plugin.bloodConfig().permanentLore()) {
+            stripInventory(event.getPlayer().getInventory());
+        }
+    }
+
+    private void injectInventory(Inventory inventory) {
+        if (!plugin.bloodConfig().displayWorth()) {
+            return;
+        }
+        for (ItemStack item : inventory.getContents()) {
+            inject(item);
+        }
+    }
+
+    private void stripInventory(Inventory inventory) {
+        for (ItemStack item : inventory.getContents()) {
+            strip(item);
+        }
+    }
+
+    private void inject(ItemStack item) {
+        if (item == null || item.getType().isAir()) {
+            return;
+        }
+        plugin.worthEngine().worth(item).ifPresent(worth -> {
+            strip(item);
+            ItemMeta meta = item.getItemMeta();
+            if (meta == null) return;
+            List<Component> lore = meta.lore() == null ? new ArrayList<>() : new ArrayList<>(meta.lore());
+            lore.add(worthLine(worth));
+            meta.lore(lore);
+            if (!plugin.bloodConfig().permanentLore()) {
+                meta.getPersistentDataContainer().set(marker, PersistentDataType.BYTE, (byte) 1);
+            }
+            item.setItemMeta(meta);
+        });
+    }
+
+    private void strip(ItemStack item) {
+        if (item == null || item.getType().isAir() || !item.hasItemMeta()) {
+            return;
+        }
+        ItemMeta meta = item.getItemMeta();
+        if (meta == null || meta.lore() == null) {
+            return;
+        }
+        boolean marked = meta.getPersistentDataContainer().has(marker, PersistentDataType.BYTE);
+        List<Component> lore = new ArrayList<>();
+        boolean changed = false;
+        for (Component line : meta.lore()) {
+            if (PLAIN.serialize(line).startsWith("WORTH:")) {
+                changed = true;
+                continue;
+            }
+            lore.add(line);
+        }
+        if (changed || marked) {
+            meta.lore(lore.isEmpty() ? null : lore);
+            meta.getPersistentDataContainer().remove(marker);
+            item.setItemMeta(meta);
+        }
+    }
+
+    private Component worthLine(WorthResult worth) {
+        String raw = plugin.bloodConfig().string("format.worth-line", "<dark_gray>WORTH: <green><price> <gray><economy_icon>");
+        raw = raw.replace("<price>", plugin.economies().format(worth.economy(), worth.unitWorth()))
+                .replace("<economy>", worth.economy().raw())
+                .replace("<economy_icon>", plugin.economies().icon(worth.economy()));
+        return plugin.messages().mini(raw);
+    }
+}

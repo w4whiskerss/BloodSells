@@ -1,0 +1,52 @@
+name: BloodSells
+version: ${project.version}
+main: dev.bloodworth.bloodsells.BloodSellsPlugin
+api-version: '1.21'
+author: BloodWorth
+description: Modern multi-economy worth and selling system.
+softdepend:
+  - Vault
+  - CoinsEngine
+  - PlayerPoints
+  - ExcellentEconomy
+  - PlaceholderAPI
+  - ItemsAdder
+  - Oraxen
+  - MMOItems
+commands:
+  sellhand:
+    description: Sell the stack in your main hand.
+    usage: /sellhand
+  sellgui:
+    description: Open the BloodSells sell GUI.
+    usage: /sellgui
+  sellall:
+    description: Sell every matching item in your inventory.
+    usage: /sellall <itemname>
+  sellhandall:
+    description: Sell all inventory items matching your hand.
+    usage: /sellhandall
+  worth:
+    description: BloodSells admin worth command.
+    usage: /worth <set|economy|reload|info>
+permissions:
+  bloodsells.use:
+    default: true
+  bloodsells.sellhand:
+    default: true
+  bloodsells.sellgui:
+    default: true
+  bloodsells.sellall:
+    default: true
+  bloodsells.sellhandall:
+    default: true
+  bloodsells.admin:
+    default: op
+  bloodsells.worth.set:
+    default: op
+  bloodsells.worth.economy:
+    default: op
+  bloodsells.worth.reload:
+    default: op
+  bloodsells.worth.info:
+    default: op
