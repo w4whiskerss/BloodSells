@@ -16,7 +16,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-public final class WorthCommand implements CommandExecutor, TabCompleter {
+public final class WorthCommand implements CommandExecutor, TabCompleter, BloodSellsPlugin.CommandHandler {
     private final BloodSellsPlugin plugin;
 
     public WorthCommand(BloodSellsPlugin plugin) {
@@ -25,6 +25,11 @@ public final class WorthCommand implements CommandExecutor, TabCompleter {
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+        return execute(sender, command.getName(), args);
+    }
+
+    @Override
+    public boolean execute(CommandSender sender, String name, String[] args) {
         if (args.length == 0) {
             sender.sendMessage("/worth set <item> <price>");
             sender.sendMessage("/worth economy <item> <economy>");
@@ -127,6 +132,11 @@ public final class WorthCommand implements CommandExecutor, TabCompleter {
 
     @Override
     public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
+        return suggest(sender, command.getName(), args).stream().toList();
+    }
+
+    @Override
+    public List<String> suggest(CommandSender sender, String name, String[] args) {
         if (args.length == 1) {
             return List.of("set", "economy", "reload", "info").stream().filter(s -> s.startsWith(args[0].toLowerCase(Locale.ROOT))).toList();
         }

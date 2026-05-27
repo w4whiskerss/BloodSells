@@ -18,7 +18,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-public final class SellCommands implements CommandExecutor, TabCompleter {
+public final class SellCommands implements CommandExecutor, TabCompleter, BloodSellsPlugin.CommandHandler {
     private final BloodSellsPlugin plugin;
 
     public SellCommands(BloodSellsPlugin plugin) {
@@ -27,11 +27,16 @@ public final class SellCommands implements CommandExecutor, TabCompleter {
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+        return execute(sender, command.getName(), args);
+    }
+
+    @Override
+    public boolean execute(CommandSender sender, String name, String[] args) {
         if (!(sender instanceof Player player)) {
             plugin.messages().send(sender, "player-only", Map.of());
             return true;
         }
-        return switch (command.getName().toLowerCase(Locale.ROOT)) {
+        return switch (name.toLowerCase(Locale.ROOT)) {
             case "sellhand" -> sellHand(player);
             case "sellgui" -> sellGui(player);
             case "sellall" -> sellAll(player, args);
@@ -106,7 +111,12 @@ public final class SellCommands implements CommandExecutor, TabCompleter {
 
     @Override
     public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
-        if (command.getName().equalsIgnoreCase("sellall") && args.length == 1) {
+        return suggest(sender, command.getName(), args).stream().toList();
+    }
+
+    @Override
+    public List<String> suggest(CommandSender sender, String name, String[] args) {
+        if (name.equalsIgnoreCase("sellall") && args.length == 1) {
             String prefix = args[0].toUpperCase(Locale.ROOT);
             List<String> matches = new ArrayList<>();
             for (Material material : Material.values()) {

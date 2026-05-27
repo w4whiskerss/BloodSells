@@ -13,22 +13,6 @@ softdepend:
   - ItemsAdder
   - Oraxen
   - MMOItems
-commands:
-  sellhand:
-    description: Sell the stack in your main hand.
-    usage: /sellhand
-  sellgui:
-    description: Open the BloodSells sell GUI.
-    usage: /sellgui
-  sellall:
-    description: Sell every matching item in your inventory.
-    usage: /sellall <itemname>
-  sellhandall:
-    description: Sell all inventory items matching your hand.
-    usage: /sellhandall
-  worth:
-    description: BloodSells admin worth command.
-    usage: /worth <set|economy|reload|info>
 permissions:
   bloodsells.use:
     default: true

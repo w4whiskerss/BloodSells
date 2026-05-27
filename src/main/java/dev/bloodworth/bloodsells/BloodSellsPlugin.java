@@ -10,8 +10,14 @@ import dev.bloodworth.bloodsells.sell.SellService;
 import dev.bloodworth.bloodsells.storage.TransactionLogger;
 import dev.bloodworth.bloodsells.util.Messages;
 import dev.bloodworth.bloodsells.worth.WorthEngine;
-import org.bukkit.command.PluginCommand;
+import io.papermc.paper.command.brigadier.BasicCommand;
+import io.papermc.paper.command.brigadier.CommandSourceStack;
+import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
+import org.bukkit.command.CommandSender;
 import org.bukkit.plugin.java.JavaPlugin;
+
+import java.util.Collection;
+import java.util.List;
 
 public final class BloodSellsPlugin extends JavaPlugin {
     private BloodConfig bloodConfig;
@@ -27,12 +33,7 @@ public final class BloodSellsPlugin extends JavaPlugin {
         saveResource("messages.yml", false);
         reloadSystems();
 
-        SellCommands sellCommands = new SellCommands(this);
-        register("sellhand", sellCommands);
-        register("sellgui", sellCommands);
-        register("sellall", sellCommands);
-        register("sellhandall", sellCommands);
-        register("worth", new WorthCommand(this));
+        registerCommands();
 
         getServer().getPluginManager().registerEvents(new ItemWorthListener(this), this);
         getServer().getPluginManager().registerEvents(new SellGuiListener(this), this);
@@ -60,16 +61,16 @@ public final class BloodSellsPlugin extends JavaPlugin {
         sellService = new SellService(this, bloodConfig, worthEngine, economyRegistry, transactionLogger);
     }
 
-    private void register(String name, org.bukkit.command.CommandExecutor executor) {
-        PluginCommand command = getCommand(name);
-        if (command == null) {
-            getLogger().warning("Command missing from plugin.yml: " + name);
-            return;
-        }
-        command.setExecutor(executor);
-        if (executor instanceof org.bukkit.command.TabCompleter completer) {
-            command.setTabCompleter(completer);
-        }
+    private void registerCommands() {
+        SellCommands sellCommands = new SellCommands(this);
+        WorthCommand worthCommand = new WorthCommand(this);
+        getLifecycleManager().registerEventHandler(LifecycleEvents.COMMANDS, event -> {
+            event.registrar().register("sellhand", "Sell the stack in your main hand.", List.of(), new PaperCommand("sellhand", sellCommands));
+            event.registrar().register("sellgui", "Open the BloodSells sell GUI.", List.of(), new PaperCommand("sellgui", sellCommands));
+            event.registrar().register("sellall", "Sell every matching material in your inventory.", List.of(), new PaperCommand("sellall", sellCommands));
+            event.registrar().register("sellhandall", "Sell every inventory item matching your hand.", List.of(), new PaperCommand("sellhandall", sellCommands));
+            event.registrar().register("worth", "BloodSells admin worth command.", List.of(), new PaperCommand("worth", worthCommand));
+        });
     }
 
     private void registerPlaceholderApi() {
@@ -104,5 +105,28 @@ public final class BloodSellsPlugin extends JavaPlugin {
 
     public SellService sellService() {
         return sellService;
+    }
+
+    private record PaperCommand(String name, CommandHandler handler) implements BasicCommand {
+        @Override
+        public void execute(CommandSourceStack source, String[] args) {
+            handler.execute(source.getSender(), name, args);
+        }
+
+        @Override
+        public Collection<String> suggest(CommandSourceStack source, String[] args) {
+            return handler.suggest(source.getSender(), name, args);
+        }
+
+        @Override
+        public boolean canUse(CommandSender sender) {
+            return true;
+        }
+    }
+
+    public interface CommandHandler {
+        boolean execute(CommandSender sender, String name, String[] args);
+
+        Collection<String> suggest(CommandSender sender, String name, String[] args);
     }
 }
