@@ -16,6 +16,9 @@ import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
 import org.bukkit.inventory.meta.BlockStateMeta;
+import org.bukkit.inventory.meta.ItemMeta;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -26,6 +29,7 @@ import java.util.Collections;
 import java.util.concurrent.CompletableFuture;
 
 public final class SellService {
+    private static final PlainTextComponentSerializer PLAIN = PlainTextComponentSerializer.plainText();
     private final BloodSellsPlugin plugin;
     private final BloodConfig config;
     private final WorthEngine worthEngine;
@@ -45,6 +49,7 @@ public final class SellService {
         if (hand.getType().isAir()) {
             return new SellResult(0, List.of(), List.of("empty"));
         }
+        stripWorthLore(hand);
         ItemStack copy = hand.clone();
         SaleQuote quote = quoteStack(copy, player);
         if (quote.itemsSold() <= 0) {
@@ -66,9 +71,16 @@ public final class SellService {
         if (hand.getType().isAir()) {
             return new SellResult(0, List.of(), List.of("empty"));
         }
+        stripWorthLore(hand);
         ItemStack template = hand.clone();
         template.setAmount(1);
-        return sellMatching(player, stack -> stack != null && stack.isSimilar(template));
+        return sellMatching(player, stack -> {
+            if (stack == null) {
+                return false;
+            }
+            stripWorthLore(stack);
+            return stack.isSimilar(template);
+        });
     }
 
     public SellResult sellInventoryContents(Player player, Inventory inventory, List<Integer> inputSlots) {
@@ -80,6 +92,7 @@ public final class SellService {
             if (stack == null || stack.getType().isAir()) {
                 continue;
             }
+            stripWorthLore(stack);
             SaleQuote quote = quoteStack(stack, player);
             if (quote.itemsSold() > 0) {
                 total.merge(quote);
@@ -107,6 +120,7 @@ public final class SellService {
         for (int slot : inputSlots) {
             ItemStack stack = inventory.getItem(slot);
             if (stack != null && !stack.getType().isAir()) {
+                stripWorthLore(stack);
                 total.merge(quoteStack(stack, player));
             }
         }
@@ -167,6 +181,10 @@ public final class SellService {
         if (worth.isEmpty()) {
             return;
         }
+        Optional<EconomyKey> economy = economies.resolve(worth.get().economy());
+        if (economy.isEmpty()) {
+            return;
+        }
         double multiplier = config.globalBooster();
         for (Map.Entry<String, Double> entry : config.permissionMultipliers().entrySet()) {
             if (player.hasPermission(entry.getKey())) {
@@ -174,7 +192,7 @@ public final class SellService {
             }
         }
         double total = worth.get().total(stack.getAmount()) * multiplier;
-        quote.add(worth.get().economy(), total, stack.getAmount());
+        quote.add(economy.get(), total, stack.getAmount());
     }
 
     private SellResult pay(Player player, SaleQuote quote, String itemName) {
@@ -224,6 +242,30 @@ public final class SellService {
         box.getInventory().clear();
         meta.setBlockState(box);
         stack.setItemMeta(meta);
+    }
+
+    private void stripWorthLore(ItemStack item) {
+        if (item == null || item.getType().isAir() || !item.hasItemMeta()) {
+            return;
+        }
+        ItemMeta meta = item.getItemMeta();
+        if (meta == null || meta.lore() == null) {
+            return;
+        }
+        List<Component> kept = new ArrayList<>();
+        boolean changed = false;
+        for (Component line : meta.lore()) {
+            String plain = PLAIN.serialize(line).toLowerCase(java.util.Locale.ROOT).replace(" ", "");
+            if (plain.startsWith("worth:")) {
+                changed = true;
+                continue;
+            }
+            kept.add(line);
+        }
+        if (changed) {
+            meta.lore(kept.isEmpty() ? null : kept);
+            item.setItemMeta(meta);
+        }
     }
 
     public static final class SaleQuote {

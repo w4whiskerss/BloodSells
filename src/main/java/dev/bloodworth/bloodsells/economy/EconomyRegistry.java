@@ -39,6 +39,22 @@ public final class EconomyRegistry {
         return Optional.of(provider);
     }
 
+    public Optional<EconomyKey> resolve(EconomyKey preferred) {
+        if (provider(preferred).isPresent()) {
+            return Optional.of(preferred);
+        }
+        EconomyKey fallback = config.defaultEconomy();
+        if (provider(fallback).isPresent()) {
+            return Optional.of(fallback);
+        }
+        for (EconomyProvider provider : providers.values()) {
+            if (provider.isAvailable()) {
+                return Optional.of(new EconomyKey(provider.id(), ""));
+            }
+        }
+        return Optional.empty();
+    }
+
     public String format(EconomyKey key, double amount) {
         return provider(key).map(p -> p.format(amount, key.currency())).orElse(String.format(Locale.US, "%,.2f %s", amount, key.raw()));
     }

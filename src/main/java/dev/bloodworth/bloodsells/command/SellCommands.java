@@ -89,6 +89,10 @@ public final class SellCommands implements CommandExecutor, TabCompleter, BloodS
 
     private void announce(Player player, SellResult result, ItemStack item, int amount) {
         if (!result.soldAnything()) {
+            if (!result.failures().isEmpty()) {
+                player.sendMessage(plugin.messages().mini("<dark_red><bold>BloodSells</bold></dark_red> <gray>»</gray> <red>Sell failed: <white>" + String.join(", ", result.failures())));
+                return;
+            }
             plugin.messages().send(player, "no-items", Map.of());
             return;
         }
