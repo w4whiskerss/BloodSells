@@ -26,6 +26,8 @@ permissions:
     default: true
   bloodsells.admin:
     default: op
+  bloodsells.admingui:
+    default: op
   bloodsells.worth.set:
     default: op
   bloodsells.worth.economy:

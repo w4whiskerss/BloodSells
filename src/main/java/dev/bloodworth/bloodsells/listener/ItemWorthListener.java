@@ -9,11 +9,10 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
-import org.bukkit.event.block.BlockBreakEvent;
-import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.entity.EntityPickupItemEvent;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
+import org.bukkit.event.inventory.InventoryDragEvent;
 import org.bukkit.event.inventory.InventoryOpenEvent;
 import org.bukkit.event.player.PlayerDropItemEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
@@ -42,14 +41,12 @@ public final class ItemWorthListener implements Listener {
         }
     }
 
-    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
-    public void onBreak(BlockBreakEvent event) {
-        plugin.getServer().getScheduler().runTask(plugin, () -> injectInventory(event.getPlayer().getInventory()));
-    }
-
-    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
-    public void onPlace(BlockPlaceEvent event) {
-        plugin.getServer().getScheduler().runTask(plugin, () -> injectInventory(event.getPlayer().getInventory()));
+    @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
+    public void beforePickup(EntityPickupItemEvent event) {
+        strip(event.getItem().getItemStack());
+        if (event.getEntity() instanceof Player player) {
+            stripInventory(player.getInventory());
+        }
     }
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
@@ -60,8 +57,29 @@ public final class ItemWorthListener implements Listener {
         }
     }
 
-    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
     public void onClick(InventoryClickEvent event) {
+        strip(event.getCurrentItem());
+        strip(event.getCursor());
+        if (event.getWhoClicked() instanceof Player player) {
+            stripInventory(player.getInventory());
+        }
+        stripInventory(event.getInventory());
+        plugin.getServer().getScheduler().runTask(plugin, () -> {
+            injectInventory(event.getInventory());
+            if (event.getWhoClicked() instanceof Player player) {
+                injectInventory(player.getInventory());
+            }
+        });
+    }
+
+    @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
+    public void onDrag(InventoryDragEvent event) {
+        strip(event.getOldCursor());
+        stripInventory(event.getInventory());
+        if (event.getWhoClicked() instanceof Player player) {
+            stripInventory(player.getInventory());
+        }
         plugin.getServer().getScheduler().runTask(plugin, () -> {
             injectInventory(event.getInventory());
             if (event.getWhoClicked() instanceof Player player) {
@@ -139,7 +157,7 @@ public final class ItemWorthListener implements Listener {
         List<Component> lore = new ArrayList<>();
         boolean changed = false;
         for (Component line : meta.lore()) {
-            if (PLAIN.serialize(line).startsWith("WORTH:")) {
+            if (isWorthLine(PLAIN.serialize(line))) {
                 changed = true;
                 continue;
             }
@@ -153,10 +171,15 @@ public final class ItemWorthListener implements Listener {
     }
 
     private Component worthLine(WorthResult worth) {
-        String raw = plugin.bloodConfig().string("format.worth-line", "<dark_gray>WORTH: <green><price> <gray><economy_icon>");
-        raw = raw.replace("<price>", plugin.economies().format(worth.economy(), worth.unitWorth()))
+        String raw = plugin.bloodConfig().string("format.worth-line", "<!i><white>Worth : <price>");
+        String price = String.format(java.util.Locale.US, plugin.bloodConfig().displayPriceFormat(), worth.unitWorth());
+        raw = raw.replace("<price>", price)
                 .replace("<economy>", worth.economy().raw())
                 .replace("<economy_icon>", plugin.economies().icon(worth.economy()));
         return plugin.messages().mini(raw);
+    }
+
+    private boolean isWorthLine(String plain) {
+        return plain.toLowerCase(java.util.Locale.ROOT).replace(" ", "").startsWith("worth:");
     }
 }

@@ -37,7 +37,7 @@ items:
 
   EMERALD:
     worth: 250
-    economy: PLAYERPOINTS:blood
+    economy: VAULT
 
   NETHER_STAR:
     worth: 1000
@@ -45,7 +45,7 @@ items:
 
   SPAWNER:
     worth: 5000
-    economy: EXCELLENTECONOMY
+    economy: VAULT
 ```
 
 One player sale can pay several providers in one action. The GUI previews those payouts separately so players know exactly what they are receiving.
@@ -115,6 +115,8 @@ Optional integrations:
 | `/worth economy <item> <economy>` | `bloodsells.worth.economy` | Sets the economy used by an item |
 | `/worth reload` | `bloodsells.worth.reload` | Reloads config and systems |
 | `/worth info <item>` | `bloodsells.worth.info` | Shows worth and economy routing for an item |
+| `/worth gui` | `bloodsells.admingui` | Opens the in-game worth editor for the item in hand |
+| `/worth economies` | `bloodsells.worth.info` | Shows detected economy providers |
 
 Admin umbrella permission:
 
@@ -166,25 +168,20 @@ BloodSells calculates item worth using:
 - Material rarity hints
 - Progression difficulty
 - Stack size
-- Durability
-- Enchantments
-- Custom model data
-- Display names
-- Persistent metadata
 - Manual overrides
 - Category multipliers
 - Global boosters
 - Permission multipliers
 - Blacklists
 
-Generated values are cached for fast lookup. Manual overrides should be used for your final economy balance, while generated values give every obtainable item a reasonable starting point.
+Generated values are static per material by default. A diamond is always the diamond value unless you change `DIAMOND` in-game or in config. Enchantment, durability, lore, NBT, and custom metadata pricing are disabled by default so values do not drift.
 
 ## Worth Display
 
 BloodSells can show item worth as a lore line:
 
 ```text
-WORTH: <price>
+Worth : <price>
 ```
 
 The display system is designed to avoid duplicate lines. By default it treats injected worth lore as transient and cleans it up when inventories close or players quit.
@@ -201,7 +198,7 @@ Formatting uses MiniMessage:
 
 ```yaml
 format:
-  worth-line: "<dark_gray>WORTH: <green><price> <gray><economy_icon>"
+  worth-line: "<!i><white>Worth : <price>"
 ```
 
 ## Sell GUI
@@ -354,4 +351,3 @@ Reflection-backed economy adapters let BloodSells stay soft-dependent and boot e
 ## License
 
 Private server plugin unless you choose to add a public license.
-

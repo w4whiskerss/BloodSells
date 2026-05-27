@@ -2,6 +2,7 @@ package dev.bloodworth.bloodsells.command;
 
 import dev.bloodworth.bloodsells.BloodSellsPlugin;
 import dev.bloodworth.bloodsells.economy.EconomyKey;
+import dev.bloodworth.bloodsells.gui.WorthAdminGui;
 import dev.bloodworth.bloodsells.util.ItemNames;
 import dev.bloodworth.bloodsells.worth.WorthResult;
 import org.bukkit.Material;
@@ -10,6 +11,7 @@ import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabCompleter;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.entity.Player;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -35,6 +37,8 @@ public final class WorthCommand implements CommandExecutor, TabCompleter, BloodS
             sender.sendMessage("/worth economy <item> <economy>");
             sender.sendMessage("/worth reload");
             sender.sendMessage("/worth info <item>");
+            sender.sendMessage("/worth gui");
+            sender.sendMessage("/worth economies");
             return true;
         }
         return switch (args[0].toLowerCase(Locale.ROOT)) {
@@ -42,6 +46,8 @@ public final class WorthCommand implements CommandExecutor, TabCompleter, BloodS
             case "economy" -> economy(sender, args);
             case "reload" -> reload(sender);
             case "info" -> info(sender, args);
+            case "gui" -> gui(sender);
+            case "economies" -> economies(sender);
             default -> false;
         };
     }
@@ -114,6 +120,28 @@ public final class WorthCommand implements CommandExecutor, TabCompleter, BloodS
         return true;
     }
 
+    private boolean gui(CommandSender sender) {
+        if (!permission(sender, "bloodsells.admingui")) return true;
+        if (!(sender instanceof Player player)) {
+            plugin.messages().send(sender, "player-only", Map.of());
+            return true;
+        }
+        ItemStack hand = player.getInventory().getItemInMainHand();
+        if (hand.getType().isAir()) {
+            plugin.messages().send(player, "usage-worth-gui", Map.of());
+            return true;
+        }
+        new WorthAdminGui(plugin, player, hand.getType()).open();
+        plugin.messages().send(player, "worth-gui-opened", Map.of("item", ItemNames.pretty(hand.getType())));
+        return true;
+    }
+
+    private boolean economies(CommandSender sender) {
+        if (!permission(sender, "bloodsells.worth.info")) return true;
+        sender.sendMessage(plugin.messages().mini("<dark_red><bold>BloodSells</bold></dark_red> <gray>»</gray> <white>Detected economies: <green>" + String.join(", ", plugin.economies().availableIds())));
+        return true;
+    }
+
     private Material material(CommandSender sender, String value) {
         Material material = Material.matchMaterial(value);
         if (material == null) {
@@ -138,7 +166,7 @@ public final class WorthCommand implements CommandExecutor, TabCompleter, BloodS
     @Override
     public List<String> suggest(CommandSender sender, String name, String[] args) {
         if (args.length == 1) {
-            return List.of("set", "economy", "reload", "info").stream().filter(s -> s.startsWith(args[0].toLowerCase(Locale.ROOT))).toList();
+            return List.of("set", "economy", "reload", "info", "gui", "economies").stream().filter(s -> s.startsWith(args[0].toLowerCase(Locale.ROOT))).toList();
         }
         if ((args.length == 2 && List.of("set", "economy", "info").contains(args[0].toLowerCase(Locale.ROOT)))) {
             String prefix = args[1].toUpperCase(Locale.ROOT);

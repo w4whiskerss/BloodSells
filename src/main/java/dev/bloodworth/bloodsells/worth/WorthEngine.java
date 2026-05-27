@@ -2,7 +2,10 @@ package dev.bloodworth.bloodsells.worth;
 
 import dev.bloodworth.bloodsells.config.BloodConfig;
 import dev.bloodworth.bloodsells.economy.EconomyKey;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.bukkit.Material;
+import org.bukkit.NamespacedKey;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.Damageable;
@@ -13,17 +16,22 @@ import java.util.EnumMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 
 public final class WorthEngine {
+    private static final PlainTextComponentSerializer PLAIN = PlainTextComponentSerializer.plainText();
     private final JavaPlugin plugin;
     private final BloodConfig config;
+    private final NamespacedKey displayMarker;
     private final Map<String, CacheEntry> cache = new ConcurrentHashMap<>();
     private final Map<Material, Double> baseCache = new EnumMap<>(Material.class);
 
     public WorthEngine(JavaPlugin plugin, BloodConfig config) {
         this.plugin = plugin;
         this.config = config;
+        this.displayMarker = new NamespacedKey(plugin, "worth_lore");
     }
 
     public Optional<WorthResult> worth(ItemStack item) {
@@ -58,6 +66,12 @@ public final class WorthEngine {
         invalidate();
     }
 
+    public void clearOverride(Material material) {
+        plugin.getConfig().set("items." + material.name(), null);
+        plugin.saveConfig();
+        invalidate();
+    }
+
     private WorthResult calculate(ItemStack item) {
         Material material = item.getType();
         BloodConfig.ItemOverride override = config.override(material);
@@ -65,21 +79,21 @@ public final class WorthEngine {
         EconomyKey economy = override != null ? override.economy() : config.defaultEconomy();
 
         BloodConfig.CategoryRule category = config.category(material);
-        if (category != null) {
+        if (category != null && override == null) {
             economy = category.economy();
             base *= category.multiplier();
         }
 
         ItemMeta meta = item.getItemMeta();
         if (meta != null) {
-            if (!meta.getEnchants().isEmpty()) {
+            if (config.enchantmentPricing() && !meta.getEnchants().isEmpty()) {
                 int levels = meta.getEnchants().entrySet().stream().mapToInt(entry -> enchantWeight(entry.getKey(), entry.getValue())).sum();
                 base *= 1D + (levels * config.enchantmentMultiplier());
             }
-            if (meta.hasCustomModelData() || meta.hasDisplayName() || !meta.getPersistentDataContainer().isEmpty()) {
+            if (config.metadataPricing() && (meta.hasCustomModelData() || meta.hasDisplayName() || hasExternalPersistentData(meta))) {
                 base *= config.customModelDataMultiplier();
             }
-            if (meta instanceof Damageable damageable && material.getMaxDurability() > 0) {
+            if (config.durabilityPricing() && meta instanceof Damageable damageable && material.getMaxDurability() > 0) {
                 double remaining = Math.max(0D, material.getMaxDurability() - damageable.getDamage());
                 base *= Math.max(0.1D, remaining / material.getMaxDurability());
             }
@@ -131,7 +145,50 @@ public final class WorthEngine {
         if (!config.nbtAwarePricing()) {
             return base;
         }
-        return base + ":" + item.getItemMeta();
+        ItemMeta meta = item.getItemMeta();
+        if (meta == null) {
+            return base;
+        }
+        StringBuilder key = new StringBuilder(base);
+        if (meta.hasCustomModelData()) {
+            key.append(":cmd=").append(meta.getCustomModelData());
+        }
+        if (meta.hasDisplayName()) {
+            key.append(":name=").append(meta.getDisplayName());
+        }
+        if (meta instanceof Damageable damageable) {
+            key.append(":damage=").append(damageable.getDamage());
+        }
+        if (!meta.getEnchants().isEmpty()) {
+            meta.getEnchants().entrySet().stream()
+                    .sorted(java.util.Comparator.comparing(entry -> entry.getKey().getKey().asString()))
+                    .forEach(entry -> key.append(":ench=").append(entry.getKey().getKey()).append('@').append(entry.getValue()));
+        }
+        Set<String> dataKeys = new TreeSet<>();
+        meta.getPersistentDataContainer().getKeys().stream()
+                .filter(keyed -> !keyed.equals(displayMarker))
+                .forEach(keyed -> dataKeys.add(keyed.asString()));
+        if (!dataKeys.isEmpty()) {
+            key.append(":pdc=").append(String.join(",", dataKeys));
+        }
+        if (meta.lore() != null) {
+            for (Component line : meta.lore()) {
+                String plain = PLAIN.serialize(line);
+                if (!isBloodSellsWorthLine(plain)) {
+                    key.append(":lore=").append(plain);
+                }
+            }
+        }
+        return key.toString();
+    }
+
+    private boolean hasExternalPersistentData(ItemMeta meta) {
+        return meta.getPersistentDataContainer().getKeys().stream().anyMatch(key -> !key.equals(displayMarker));
+    }
+
+    private boolean isBloodSellsWorthLine(String plain) {
+        String normalized = plain.toLowerCase(Locale.ROOT).replace(" ", "");
+        return normalized.startsWith("worth:");
     }
 
     private double round(double value) {

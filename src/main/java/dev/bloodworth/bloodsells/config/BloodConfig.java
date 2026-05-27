@@ -96,7 +96,19 @@ public final class BloodConfig {
     }
 
     public boolean nbtAwarePricing() {
-        return plugin.getConfig().getBoolean("settings.nbt-aware-pricing", true);
+        return plugin.getConfig().getBoolean("settings.nbt-aware-pricing", false);
+    }
+
+    public boolean enchantmentPricing() {
+        return plugin.getConfig().getBoolean("settings.enchantment-pricing", false);
+    }
+
+    public boolean metadataPricing() {
+        return plugin.getConfig().getBoolean("settings.metadata-pricing", false);
+    }
+
+    public boolean durabilityPricing() {
+        return plugin.getConfig().getBoolean("settings.durability-pricing", false);
     }
 
     public double enchantmentMultiplier() {
@@ -105,6 +117,10 @@ public final class BloodConfig {
 
     public double customModelDataMultiplier() {
         return plugin.getConfig().getDouble("settings.custom-model-data-multiplier", 1.15D);
+    }
+
+    public String displayPriceFormat() {
+        return plugin.getConfig().getString("settings.display-price-format", "%,.2f");
     }
 
     public int cacheExpireSeconds() {

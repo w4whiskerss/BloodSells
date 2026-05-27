@@ -8,7 +8,9 @@ import dev.bloodworth.bloodsells.economy.provider.VaultProvider;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.Collection;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
@@ -57,5 +59,15 @@ public final class EconomyRegistry {
 
     public Collection<String> ids() {
         return providers.keySet();
+    }
+
+    public Collection<String> availableIds() {
+        List<String> ids = new ArrayList<>();
+        for (EconomyProvider provider : providers.values()) {
+            if (provider.isAvailable()) {
+                ids.add(provider.id());
+            }
+        }
+        return ids;
     }
 }

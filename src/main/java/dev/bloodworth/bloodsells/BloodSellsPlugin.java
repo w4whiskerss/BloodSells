@@ -5,6 +5,7 @@ import dev.bloodworth.bloodsells.command.WorthCommand;
 import dev.bloodworth.bloodsells.config.BloodConfig;
 import dev.bloodworth.bloodsells.economy.EconomyRegistry;
 import dev.bloodworth.bloodsells.gui.SellGuiListener;
+import dev.bloodworth.bloodsells.gui.WorthAdminGuiListener;
 import dev.bloodworth.bloodsells.listener.ItemWorthListener;
 import dev.bloodworth.bloodsells.sell.SellService;
 import dev.bloodworth.bloodsells.storage.TransactionLogger;
@@ -12,10 +13,10 @@ import dev.bloodworth.bloodsells.util.Messages;
 import dev.bloodworth.bloodsells.worth.WorthEngine;
 import io.papermc.paper.command.brigadier.BasicCommand;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
-import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
 import org.bukkit.command.CommandSender;
 import org.bukkit.plugin.java.JavaPlugin;
 
+import java.io.File;
 import java.util.Collection;
 import java.util.List;
 
@@ -30,13 +31,16 @@ public final class BloodSellsPlugin extends JavaPlugin {
     @Override
     public void onEnable() {
         saveDefaultConfig();
-        saveResource("messages.yml", false);
+        if (!new File(getDataFolder(), "messages.yml").exists()) {
+            saveResource("messages.yml", false);
+        }
         reloadSystems();
 
         registerCommands();
 
         getServer().getPluginManager().registerEvents(new ItemWorthListener(this), this);
         getServer().getPluginManager().registerEvents(new SellGuiListener(this), this);
+        getServer().getPluginManager().registerEvents(new WorthAdminGuiListener(this), this);
         registerPlaceholderApi();
         getLogger().info("BloodSells enabled with " + economyRegistry.availableProviderCount() + " economy provider(s).");
     }
@@ -64,13 +68,11 @@ public final class BloodSellsPlugin extends JavaPlugin {
     private void registerCommands() {
         SellCommands sellCommands = new SellCommands(this);
         WorthCommand worthCommand = new WorthCommand(this);
-        getLifecycleManager().registerEventHandler(LifecycleEvents.COMMANDS, event -> {
-            event.registrar().register("sellhand", "Sell the stack in your main hand.", List.of(), new PaperCommand("sellhand", sellCommands));
-            event.registrar().register("sellgui", "Open the BloodSells sell GUI.", List.of(), new PaperCommand("sellgui", sellCommands));
-            event.registrar().register("sellall", "Sell every matching material in your inventory.", List.of(), new PaperCommand("sellall", sellCommands));
-            event.registrar().register("sellhandall", "Sell every inventory item matching your hand.", List.of(), new PaperCommand("sellhandall", sellCommands));
-            event.registrar().register("worth", "BloodSells admin worth command.", List.of(), new PaperCommand("worth", worthCommand));
-        });
+        registerCommand("sellhand", "Sell the stack in your main hand.", List.of(), new PaperCommand("sellhand", sellCommands));
+        registerCommand("sellgui", "Open the BloodSells sell GUI.", List.of(), new PaperCommand("sellgui", sellCommands));
+        registerCommand("sellall", "Sell every matching material in your inventory.", List.of(), new PaperCommand("sellall", sellCommands));
+        registerCommand("sellhandall", "Sell every inventory item matching your hand.", List.of(), new PaperCommand("sellhandall", sellCommands));
+        registerCommand("worth", "BloodSells admin worth command.", List.of(), new PaperCommand("worth", worthCommand));
     }
 
     private void registerPlaceholderApi() {

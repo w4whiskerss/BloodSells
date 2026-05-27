@@ -2,7 +2,11 @@ settings:
   default-economy: VAULT
   permanent-lore: false
   display-worth: true
-  nbt-aware-pricing: true
+  display-price-format: "%,.2f"
+  nbt-aware-pricing: false
+  enchantment-pricing: false
+  metadata-pricing: false
+  durability-pricing: false
   enchantment-multiplier: 0.08
   custom-model-data-multiplier: 1.15
   shulker-sell-contents-first: true
@@ -16,7 +20,7 @@ settings:
       password: ""
 
 format:
-  worth-line: "<dark_gray>WORTH: <green><price> <gray><economy_icon>"
+  worth-line: "<!i><white>Worth : <price>"
   no-worth: "<red>This item cannot be sold."
   sold: "<green>Sold <white><amount>x <item></white> for <payouts>."
   payout-part: "<green><amount> <gray><economy>"
@@ -32,17 +36,17 @@ economies:
     format: "$%,.2f"
   PLAYERPOINTS:
     enabled: true
-    icon: "◆"
+    icon: "POINTS"
     display-name: "Points"
     format: "%,.0f pts"
   COINSENGINE:
     enabled: true
-    icon: "✦"
+    icon: "COINS"
     display-name: "Coins"
     format: "%,.2f coins"
   EXCELLENTECONOMY:
     enabled: true
-    icon: "⛃"
+    icon: "EX"
     display-name: "Excellent"
     format: "%,.2f"
 
@@ -71,13 +75,13 @@ items:
     economy: VAULT
   EMERALD:
     worth: 250
-    economy: PLAYERPOINTS:blood
+    economy: VAULT
   NETHER_STAR:
     worth: 1000
     economy: COINSENGINE:blood
   SPAWNER:
     worth: 5000
-    economy: EXCELLENTECONOMY
+    economy: VAULT
 
 blacklist:
   - AIR
