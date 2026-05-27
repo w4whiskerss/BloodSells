@@ -58,6 +58,7 @@ public final class TransactionLogger implements AutoCloseable {
                         plugin.getConfig().getString("settings.storage.mysql.username", ""),
                         plugin.getConfig().getString("settings.storage.mysql.password", ""));
             } else {
+                Class.forName("org.sqlite.JDBC");
                 File db = new File(plugin.getDataFolder(), "transactions.db");
                 plugin.getDataFolder().mkdirs();
                 connection = DriverManager.getConnection("jdbc:sqlite:" + db.getAbsolutePath());
@@ -75,7 +76,7 @@ public final class TransactionLogger implements AutoCloseable {
                         )
                         """);
             }
-        } catch (SQLException ex) {
+        } catch (Throwable ex) {
             plugin.getLogger().log(Level.WARNING, "Transaction storage disabled.", ex);
             connection = null;
         }

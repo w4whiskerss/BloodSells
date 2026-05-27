@@ -5,7 +5,6 @@ import dev.bloodworth.bloodsells.command.WorthCommand;
 import dev.bloodworth.bloodsells.config.BloodConfig;
 import dev.bloodworth.bloodsells.economy.EconomyRegistry;
 import dev.bloodworth.bloodsells.gui.SellGuiListener;
-import dev.bloodworth.bloodsells.hook.BloodPlaceholderExpansion;
 import dev.bloodworth.bloodsells.listener.ItemWorthListener;
 import dev.bloodworth.bloodsells.sell.SellService;
 import dev.bloodworth.bloodsells.storage.TransactionLogger;
@@ -37,9 +36,7 @@ public final class BloodSellsPlugin extends JavaPlugin {
 
         getServer().getPluginManager().registerEvents(new ItemWorthListener(this), this);
         getServer().getPluginManager().registerEvents(new SellGuiListener(this), this);
-        if (getServer().getPluginManager().isPluginEnabled("PlaceholderAPI")) {
-            new BloodPlaceholderExpansion(this).register();
-        }
+        registerPlaceholderApi();
         getLogger().info("BloodSells enabled with " + economyRegistry.availableProviderCount() + " economy provider(s).");
     }
 
@@ -72,6 +69,20 @@ public final class BloodSellsPlugin extends JavaPlugin {
         command.setExecutor(executor);
         if (executor instanceof org.bukkit.command.TabCompleter completer) {
             command.setTabCompleter(completer);
+        }
+    }
+
+    private void registerPlaceholderApi() {
+        if (!getServer().getPluginManager().isPluginEnabled("PlaceholderAPI")) {
+            return;
+        }
+        try {
+            Class<?> expansionClass = Class.forName("dev.bloodworth.bloodsells.hook.BloodPlaceholderExpansion");
+            Object expansion = expansionClass.getConstructor(BloodSellsPlugin.class).newInstance(this);
+            expansionClass.getMethod("register").invoke(expansion);
+            getLogger().info("Registered PlaceholderAPI expansion.");
+        } catch (ReflectiveOperationException | LinkageError ex) {
+            getLogger().warning("PlaceholderAPI was found, but the BloodSells expansion could not be registered: " + ex.getMessage());
         }
     }
 
