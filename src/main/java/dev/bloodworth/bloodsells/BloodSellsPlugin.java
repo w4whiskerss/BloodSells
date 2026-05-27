@@ -54,6 +54,7 @@ public final class BloodSellsPlugin extends JavaPlugin {
 
     public void reloadSystems() {
         reloadConfig();
+        migrateConfig();
         bloodConfig = new BloodConfig(this);
         messages = new Messages(this);
         economyRegistry = new EconomyRegistry(this, bloodConfig);
@@ -63,6 +64,46 @@ public final class BloodSellsPlugin extends JavaPlugin {
         }
         transactionLogger = new TransactionLogger(this, bloodConfig);
         sellService = new SellService(this, bloodConfig, worthEngine, economyRegistry, transactionLogger);
+    }
+
+    private void migrateConfig() {
+        boolean changed = false;
+        String worthLine = getConfig().getString("format.worth-line", "");
+        if ("<dark_gray>WORTH: <green><price> <gray><economy_icon>".equals(worthLine)) {
+            getConfig().set("format.worth-line", "<!i><white>Worth : <price>");
+            changed = true;
+        }
+        if (!getConfig().contains("settings.display-price-format")) {
+            getConfig().set("settings.display-price-format", "%,.2f");
+            changed = true;
+        }
+        if (!getConfig().contains("settings.enchantment-pricing")) {
+            getConfig().set("settings.enchantment-pricing", false);
+            changed = true;
+        }
+        if (!getConfig().contains("settings.metadata-pricing")) {
+            getConfig().set("settings.metadata-pricing", false);
+            changed = true;
+        }
+        if (!getConfig().contains("settings.durability-pricing")) {
+            getConfig().set("settings.durability-pricing", false);
+            changed = true;
+        }
+        if (getConfig().getBoolean("settings.nbt-aware-pricing", false)) {
+            getConfig().set("settings.nbt-aware-pricing", false);
+            changed = true;
+        }
+        if ("PLAYERPOINTS:blood".equalsIgnoreCase(getConfig().getString("items.EMERALD.economy", ""))) {
+            getConfig().set("items.EMERALD.economy", "VAULT");
+            changed = true;
+        }
+        if ("EXCELLENTECONOMY".equalsIgnoreCase(getConfig().getString("items.SPAWNER.economy", ""))) {
+            getConfig().set("items.SPAWNER.economy", "VAULT");
+            changed = true;
+        }
+        if (changed) {
+            saveConfig();
+        }
     }
 
     private void registerCommands() {
