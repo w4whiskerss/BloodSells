@@ -35,13 +35,13 @@ abstract class AbstractReflectiveProvider implements EconomyProvider {
 
     @Override
     public String format(double amount, String currency) {
-        String pattern = config.string("economies." + id + ".format", "%,.2f");
+        String pattern = config.string("economy.format", "$%,.2f");
         return String.format(Locale.US, pattern, amount);
     }
 
     @Override
     public String icon(String currency) {
-        return config.string("economies." + id + ".icon", "");
+        return "$";
     }
 
     protected Plugin dependency() {

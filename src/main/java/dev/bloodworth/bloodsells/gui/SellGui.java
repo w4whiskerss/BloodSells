@@ -1,8 +1,6 @@
 package dev.bloodworth.bloodsells.gui;
 
 import dev.bloodworth.bloodsells.BloodSellsPlugin;
-import dev.bloodworth.bloodsells.sell.Payout;
-import dev.bloodworth.bloodsells.sell.SellService;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -12,7 +10,6 @@ import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
-import org.bukkit.scheduler.BukkitRunnable;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -24,8 +21,6 @@ public final class SellGui implements InventoryHolder {
     private final Player player;
     private final Inventory inventory;
     private final Set<Integer> inputSlots;
-    private BukkitRunnable animation;
-    private int frame;
 
     public SellGui(BloodSellsPlugin plugin, Player player) {
         this.plugin = plugin;
@@ -39,7 +34,6 @@ public final class SellGui implements InventoryHolder {
 
     public void open() {
         player.openInventory(inventory);
-        startAnimation();
     }
 
     @Override
@@ -56,63 +50,17 @@ public final class SellGui implements InventoryHolder {
     }
 
     public void refresh() {
-        SellService.SaleQuote quote = plugin.sellService().quoteInventory(inventory, inputSlots(), player);
-        int previewSlot = plugin.getConfig().getInt("gui.preview-slot", 49);
-        ItemStack preview = new ItemStack(Material.PAPER);
-        ItemMeta meta = preview.getItemMeta();
-        meta.displayName(plugin.messages().mini("<green>Sell Preview"));
-        List<Component> lore = new ArrayList<>();
-        lore.add(plugin.messages().mini("<gray>Items: <white>" + quote.itemsSold()));
-        if (quote.payouts().isEmpty()) {
-            lore.add(plugin.messages().mini("<red>No sellable items"));
-        } else {
-            for (Payout payout : quote.payouts()) {
-                lore.add(plugin.messages().mini("<gray>" + plugin.economies().icon(payout.economy()) + " <white>" + plugin.sellService().formatPayouts(List.of(payout)) + " <dark_gray>(" + payout.economy().raw() + ")"));
-            }
-        }
-        meta.lore(lore);
-        preview.setItemMeta(meta);
-        inventory.setItem(previewSlot, preview);
+        inventory.setItem(plugin.getConfig().getInt("gui.cancel-slot", 45),
+                named(material("gui.cancel-material", Material.RED_WOOL), plugin.messages().mini("<!i><red>Cancel"), List.of()));
+        inventory.setItem(plugin.getConfig().getInt("gui.confirm-slot", 53),
+                named(material("gui.confirm-material", Material.LIME_WOOL), plugin.messages().mini("<!i><green>Confirm"), List.of()));
     }
 
     public void stop() {
-        if (animation != null) {
-            animation.cancel();
-            animation = null;
-        }
     }
 
     private void drawStatic() {
-        Material fillerMaterial = Material.matchMaterial(plugin.bloodConfig().string("gui.filler-material", "BLACK_STAINED_GLASS_PANE"));
-        ItemStack filler = named(fillerMaterial == null ? Material.BLACK_STAINED_GLASS_PANE : fillerMaterial, Component.empty(), List.of());
-        for (int slot = 0; slot < inventory.getSize(); slot++) {
-            if (!inputSlots.contains(slot)) {
-                inventory.setItem(slot, filler);
-            }
-        }
         refresh();
-    }
-
-    private void startAnimation() {
-        animation = new BukkitRunnable() {
-            @Override
-            public void run() {
-                int slot = plugin.getConfig().getInt("gui.confirm-slot", 53);
-                List<String> materials = plugin.getConfig().getStringList("gui.confirm-materials");
-                Material material = Material.LIME_STAINED_GLASS_PANE;
-                if (!materials.isEmpty()) {
-                    Material parsed = Material.matchMaterial(materials.get(frame % materials.size()));
-                    if (parsed != null) material = parsed;
-                }
-                ItemStack item = named(material, plugin.messages().mini("<green><bold>Confirm Sale"), List.of(
-                        plugin.messages().mini("<gray>Click to sell inserted items."),
-                        plugin.messages().mini("<dark_gray>Shulkers sell contents first.")
-                ));
-                inventory.setItem(slot, item);
-                frame++;
-            }
-        };
-        animation.runTaskTimer(plugin, 0L, 10L);
     }
 
     private ItemStack named(Material material, Component name, List<Component> lore) {
@@ -123,5 +71,10 @@ public final class SellGui implements InventoryHolder {
         meta.addItemFlags(ItemFlag.values());
         item.setItemMeta(meta);
         return item;
+    }
+
+    private Material material(String path, Material fallback) {
+        Material parsed = Material.matchMaterial(plugin.bloodConfig().string(path, fallback.name()));
+        return parsed == null ? fallback : parsed;
     }
 }

@@ -6,7 +6,6 @@ import dev.bloodworth.bloodsells.command.WorthCommand;
 import dev.bloodworth.bloodsells.config.BloodConfig;
 import dev.bloodworth.bloodsells.economy.EconomyRegistry;
 import dev.bloodworth.bloodsells.gui.SellGuiListener;
-import dev.bloodworth.bloodsells.gui.WorthAdminGuiListener;
 import dev.bloodworth.bloodsells.listener.ItemWorthListener;
 import dev.bloodworth.bloodsells.sell.SellService;
 import dev.bloodworth.bloodsells.storage.TransactionLogger;
@@ -41,8 +40,6 @@ public final class BloodSellsPlugin extends JavaPlugin {
 
         getServer().getPluginManager().registerEvents(new ItemWorthListener(this), this);
         getServer().getPluginManager().registerEvents(new SellGuiListener(this), this);
-        getServer().getPluginManager().registerEvents(new WorthAdminGuiListener(this), this);
-        registerPlaceholderApi();
         getLogger().info("BloodSells enabled with " + economyRegistry.availableProviderCount() + " economy provider(s).");
     }
 
@@ -71,11 +68,19 @@ public final class BloodSellsPlugin extends JavaPlugin {
         boolean changed = false;
         String worthLine = getConfig().getString("format.worth-line", "");
         if ("<dark_gray>WORTH: <green><price> <gray><economy_icon>".equals(worthLine)) {
-            getConfig().set("format.worth-line", "<!i><white>Worth : <price>");
+            getConfig().set("format.worth-line", "<!i><#d3d3d3>Worth : <#90ee90>$<price>");
+            changed = true;
+        }
+        if ("<!i><white>Worth : <price>".equals(worthLine)) {
+            getConfig().set("format.worth-line", "<!i><#d3d3d3>Worth : <#90ee90>$<price>");
             changed = true;
         }
         if (!getConfig().contains("settings.display-price-format")) {
             getConfig().set("settings.display-price-format", "%,.2f");
+            changed = true;
+        }
+        if (!getConfig().getBoolean("settings.permanent-lore", true)) {
+            getConfig().set("settings.permanent-lore", true);
             changed = true;
         }
         if (!getConfig().contains("settings.enchantment-pricing")) {
@@ -115,11 +120,41 @@ public final class BloodSellsPlugin extends JavaPlugin {
             getConfig().set("items.SPAWNER.economy", "VAULT");
             changed = true;
         }
+        if (!getConfig().getStringList("blacklist").contains("SPAWNER")) {
+            java.util.List<String> blacklist = new java.util.ArrayList<>(getConfig().getStringList("blacklist"));
+            blacklist.add("SPAWNER");
+            blacklist.add("TRIAL_SPAWNER");
+            blacklist.add("VAULT");
+            getConfig().set("blacklist", blacklist);
+            changed = true;
+        }
+        changed |= clearConfigPath("gui.input-slots");
+        changed |= clearConfigPath("gui.preview-slot");
+        changed |= clearConfigPath("gui.filler-material");
+        changed |= clearConfigPath("gui.confirm-materials");
+        changed |= clearConfigPath("categories");
+        changed |= clearConfigPath("multipliers");
+        changed |= clearConfigPath("economies");
+        if (!getConfig().contains("gui.cancel-slot")) {
+            getConfig().set("gui.cancel-slot", 45);
+            changed = true;
+        }
+        getConfig().set("gui.confirm-slot", 53);
+        getConfig().set("gui.cancel-material", "RED_WOOL");
+        getConfig().set("gui.confirm-material", "LIME_WOOL");
         changed |= stripCurrencySuffixes("items");
         changed |= stripCurrencySuffixes("categories");
         if (changed) {
             saveConfig();
         }
+    }
+
+    private boolean clearConfigPath(String path) {
+        if (!getConfig().contains(path)) {
+            return false;
+        }
+        getConfig().set(path, null);
+        return true;
     }
 
     private boolean stripCurrencySuffixes(String sectionPath) {
@@ -149,20 +184,6 @@ public final class BloodSellsPlugin extends JavaPlugin {
         registerCommand("sellall", "Sell every matching material in your inventory.", List.of(), new PaperCommand("sellall", sellCommands));
         registerCommand("sellhandall", "Sell every inventory item matching your hand.", List.of(), new PaperCommand("sellhandall", sellCommands));
         registerCommand("worth", "BloodSells admin worth command.", List.of(), new PaperCommand("worth", worthCommand));
-    }
-
-    private void registerPlaceholderApi() {
-        if (!getServer().getPluginManager().isPluginEnabled("PlaceholderAPI")) {
-            return;
-        }
-        try {
-            Class<?> expansionClass = Class.forName("dev.bloodworth.bloodsells.hook.BloodPlaceholderExpansion");
-            Object expansion = expansionClass.getConstructor(BloodSellsPlugin.class).newInstance(this);
-            expansionClass.getMethod("register").invoke(expansion);
-            getLogger().info("Registered PlaceholderAPI expansion.");
-        } catch (ReflectiveOperationException | LinkageError ex) {
-            getLogger().warning("PlaceholderAPI was found, but the BloodSells expansion could not be registered: " + ex.getMessage());
-        }
     }
 
     public BloodConfig bloodConfig() {

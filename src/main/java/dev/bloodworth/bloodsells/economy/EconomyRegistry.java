@@ -1,9 +1,6 @@
 package dev.bloodworth.bloodsells.economy;
 
 import dev.bloodworth.bloodsells.config.BloodConfig;
-import dev.bloodworth.bloodsells.economy.provider.CoinsEngineProvider;
-import dev.bloodworth.bloodsells.economy.provider.ExcellentEconomyProvider;
-import dev.bloodworth.bloodsells.economy.provider.PlayerPointsProvider;
 import dev.bloodworth.bloodsells.economy.provider.VaultProvider;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -22,9 +19,6 @@ public final class EconomyRegistry {
     public EconomyRegistry(JavaPlugin plugin, BloodConfig config) {
         this.config = config;
         register(new VaultProvider(plugin, config));
-        register(new PlayerPointsProvider(plugin, config));
-        register(new CoinsEngineProvider(plugin, config));
-        register(new ExcellentEconomyProvider(plugin, config));
     }
 
     public void register(EconomyProvider provider) {

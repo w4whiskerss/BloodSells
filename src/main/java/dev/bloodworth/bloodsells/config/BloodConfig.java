@@ -128,7 +128,7 @@ public final class BloodConfig {
     }
 
     public boolean transactionLog() {
-        return plugin.getConfig().getBoolean("settings.transaction-log", true);
+        return plugin.getConfig().getBoolean("settings.transaction-log", false);
     }
 
     public double globalBooster() {
@@ -140,7 +140,16 @@ public final class BloodConfig {
     }
 
     public List<Integer> guiInputSlots() {
-        return new ArrayList<>(guiInputSlots);
+        List<Integer> slots = new ArrayList<>();
+        int size = plugin.getConfig().getInt("gui.size", 54);
+        int cancel = plugin.getConfig().getInt("gui.cancel-slot", 45);
+        int confirm = plugin.getConfig().getInt("gui.confirm-slot", 53);
+        for (int slot = 0; slot < size; slot++) {
+            if (slot != cancel && slot != confirm) {
+                slots.add(slot);
+            }
+        }
+        return slots;
     }
 
     public String string(String path, String fallback) {

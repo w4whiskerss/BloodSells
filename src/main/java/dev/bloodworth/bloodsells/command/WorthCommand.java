@@ -1,8 +1,6 @@
 package dev.bloodworth.bloodsells.command;
 
 import dev.bloodworth.bloodsells.BloodSellsPlugin;
-import dev.bloodworth.bloodsells.economy.EconomyKey;
-import dev.bloodworth.bloodsells.gui.WorthAdminGui;
 import dev.bloodworth.bloodsells.util.ItemNames;
 import dev.bloodworth.bloodsells.worth.WorthResult;
 import org.bukkit.Material;
@@ -11,7 +9,6 @@ import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabCompleter;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.entity.Player;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -34,19 +31,13 @@ public final class WorthCommand implements CommandExecutor, TabCompleter, BloodS
     public boolean execute(CommandSender sender, String name, String[] args) {
         if (args.length == 0) {
             sender.sendMessage("/worth set <item> <price>");
-            sender.sendMessage("/worth economy <item> <economy>");
-            sender.sendMessage("/bloodsells reload");
             sender.sendMessage("/worth info <item>");
-            sender.sendMessage("/worth gui");
-            sender.sendMessage("/worth economies");
+            sender.sendMessage("/bloodsells reload");
             return true;
         }
         return switch (args[0].toLowerCase(Locale.ROOT)) {
             case "set" -> set(sender, args);
-            case "economy" -> economy(sender, args);
             case "info" -> info(sender, args);
-            case "gui" -> gui(sender);
-            case "economies" -> economies(sender);
             default -> false;
         };
     }
@@ -76,21 +67,6 @@ public final class WorthCommand implements CommandExecutor, TabCompleter, BloodS
         return true;
     }
 
-    private boolean economy(CommandSender sender, String[] args) {
-        if (!permission(sender, "bloodsells.worth.economy")) return true;
-        if (args.length < 3) {
-            plugin.messages().send(sender, "usage-worth-economy", Map.of());
-            return true;
-        }
-        Material material = material(sender, args[1]);
-        if (material == null) return true;
-        EconomyKey economy = EconomyKey.parse(args[2]);
-        plugin.worthEngine().setEconomy(material, economy);
-        plugin.reloadSystems();
-        plugin.messages().send(sender, "worth-economy", Map.of("item", material.name(), "economy", economy.raw()));
-        return true;
-    }
-
     private boolean info(CommandSender sender, String[] args) {
         if (!permission(sender, "bloodsells.worth.info")) return true;
         if (args.length < 2) {
@@ -107,30 +83,8 @@ public final class WorthCommand implements CommandExecutor, TabCompleter, BloodS
         plugin.messages().send(sender, "worth-info", Map.of(
                 "item", ItemNames.pretty(material),
                 "price", plugin.economies().format(result.economy(), result.unitWorth()),
-                "economy", result.economy().raw()
+                "economy", "VAULT"
         ));
-        return true;
-    }
-
-    private boolean gui(CommandSender sender) {
-        if (!permission(sender, "bloodsells.admingui")) return true;
-        if (!(sender instanceof Player player)) {
-            plugin.messages().send(sender, "player-only", Map.of());
-            return true;
-        }
-        ItemStack hand = player.getInventory().getItemInMainHand();
-        if (hand.getType().isAir()) {
-            plugin.messages().send(player, "usage-worth-gui", Map.of());
-            return true;
-        }
-        new WorthAdminGui(plugin, player, hand.getType()).open();
-        plugin.messages().send(player, "worth-gui-opened", Map.of("item", ItemNames.pretty(hand.getType())));
-        return true;
-    }
-
-    private boolean economies(CommandSender sender) {
-        if (!permission(sender, "bloodsells.worth.info")) return true;
-        sender.sendMessage(plugin.messages().mini("<dark_red><bold>BloodSells</bold></dark_red> <gray>»</gray> <white>Detected economies: <green>" + String.join(", ", plugin.economies().availableIds())));
         return true;
     }
 
@@ -158,18 +112,15 @@ public final class WorthCommand implements CommandExecutor, TabCompleter, BloodS
     @Override
     public List<String> suggest(CommandSender sender, String name, String[] args) {
         if (args.length == 1) {
-            return List.of("set", "economy", "info", "gui", "economies").stream().filter(s -> s.startsWith(args[0].toLowerCase(Locale.ROOT))).toList();
+            return List.of("set", "info").stream().filter(s -> s.startsWith(args[0].toLowerCase(Locale.ROOT))).toList();
         }
-        if ((args.length == 2 && List.of("set", "economy", "info").contains(args[0].toLowerCase(Locale.ROOT)))) {
+        if (args.length == 2 && List.of("set", "info").contains(args[0].toLowerCase(Locale.ROOT))) {
             String prefix = args[1].toUpperCase(Locale.ROOT);
             List<String> matches = new ArrayList<>();
             for (Material material : Material.values()) {
                 if (material.isItem() && material.name().startsWith(prefix)) matches.add(material.name());
             }
             return matches.stream().limit(50).toList();
-        }
-        if (args.length == 3 && args[0].equalsIgnoreCase("economy")) {
-            return plugin.economies().ids().stream().map(String::toUpperCase).filter(id -> id.startsWith(args[2].toUpperCase(Locale.ROOT))).toList();
         }
         return List.of();
     }

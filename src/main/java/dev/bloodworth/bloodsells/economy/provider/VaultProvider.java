@@ -38,14 +38,7 @@ public final class VaultProvider extends AbstractReflectiveProvider {
 
     @Override
     public String format(double amount, String currency) {
-        if (isAvailable()) {
-            try {
-                Method method = economyClass.getMethod("format", double.class);
-                return String.valueOf(method.invoke(economy, amount));
-            } catch (ReflectiveOperationException ignored) {
-            }
-        }
-        return String.format(Locale.US, "$%,.2f", amount);
+        return String.format(Locale.US, config.string("economy.format", "$%,.2f"), amount);
     }
 
     private TransactionResult depositSync(OfflinePlayer player, double amount) {

@@ -171,7 +171,7 @@ public final class ItemWorthListener implements Listener {
     }
 
     private Component worthLine(WorthResult worth) {
-        String raw = plugin.bloodConfig().string("format.worth-line", "<!i><white>Worth : <price>");
+        String raw = plugin.bloodConfig().string("format.worth-line", "<!i><#d3d3d3>Worth : <#90ee90>$<price>");
         String price = String.format(java.util.Locale.US, plugin.bloodConfig().displayPriceFormat(), worth.unitWorth());
         raw = raw.replace("<price>", price)
                 .replace("<economy>", worth.economy().raw())

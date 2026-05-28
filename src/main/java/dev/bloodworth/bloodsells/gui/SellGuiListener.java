@@ -45,6 +45,13 @@ public final class SellGuiListener implements Listener {
                 }
                 return;
             }
+            if (raw == plugin.getConfig().getInt("gui.cancel-slot", 45)) {
+                event.setCancelled(true);
+                if (event.getWhoClicked() instanceof Player player) {
+                    player.closeInventory();
+                }
+                return;
+            }
             if (!gui.isInputSlot(raw)) {
                 event.setCancelled(true);
                 return;
