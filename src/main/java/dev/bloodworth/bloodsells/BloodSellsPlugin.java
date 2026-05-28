@@ -11,14 +11,12 @@ import dev.bloodworth.bloodsells.sell.SellService;
 import dev.bloodworth.bloodsells.storage.TransactionLogger;
 import dev.bloodworth.bloodsells.util.Messages;
 import dev.bloodworth.bloodsells.worth.WorthEngine;
-import io.papermc.paper.command.brigadier.BasicCommand;
-import io.papermc.paper.command.brigadier.CommandSourceStack;
+import org.bukkit.command.PluginCommand;
 import org.bukkit.command.CommandSender;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.File;
 import java.util.Collection;
-import java.util.List;
 
 public final class BloodSellsPlugin extends JavaPlugin {
     private BloodConfig bloodConfig;
@@ -178,12 +176,22 @@ public final class BloodSellsPlugin extends JavaPlugin {
         SellCommands sellCommands = new SellCommands(this);
         WorthCommand worthCommand = new WorthCommand(this);
         BloodSellsCommand bloodSellsCommand = new BloodSellsCommand(this);
-        registerCommand("bloodsells", "BloodSells main command.", List.of("bsells"), new PaperCommand("bloodsells", bloodSellsCommand));
-        registerCommand("sellhand", "Sell the stack in your main hand.", List.of(), new PaperCommand("sellhand", sellCommands));
-        registerCommand("sellgui", "Open the BloodSells sell GUI.", List.of(), new PaperCommand("sellgui", sellCommands));
-        registerCommand("sellall", "Sell every matching material in your inventory.", List.of(), new PaperCommand("sellall", sellCommands));
-        registerCommand("sellhandall", "Sell every inventory item matching your hand.", List.of(), new PaperCommand("sellhandall", sellCommands));
-        registerCommand("worth", "BloodSells admin worth command.", List.of(), new PaperCommand("worth", worthCommand));
+        registerBukkitCommand("bloodsells", bloodSellsCommand);
+        registerBukkitCommand("sellhand", sellCommands);
+        registerBukkitCommand("sellgui", sellCommands);
+        registerBukkitCommand("sellall", sellCommands);
+        registerBukkitCommand("sellhandall", sellCommands);
+        registerBukkitCommand("worth", worthCommand);
+    }
+
+    private void registerBukkitCommand(String name, CommandHandler handler) {
+        PluginCommand command = getCommand(name);
+        if (command == null) {
+            getLogger().warning("Command missing from plugin.yml: " + name);
+            return;
+        }
+        command.setExecutor((sender, commandObj, label, args) -> handler.execute(sender, commandObj.getName(), args));
+        command.setTabCompleter((sender, commandObj, alias, args) -> handler.suggest(sender, commandObj.getName(), args).stream().toList());
     }
 
     public BloodConfig bloodConfig() {
@@ -204,23 +212,6 @@ public final class BloodSellsPlugin extends JavaPlugin {
 
     public SellService sellService() {
         return sellService;
-    }
-
-    private record PaperCommand(String name, CommandHandler handler) implements BasicCommand {
-        @Override
-        public void execute(CommandSourceStack source, String[] args) {
-            handler.execute(source.getSender(), name, args);
-        }
-
-        @Override
-        public Collection<String> suggest(CommandSourceStack source, String[] args) {
-            return handler.suggest(source.getSender(), name, args);
-        }
-
-        @Override
-        public boolean canUse(CommandSender sender) {
-            return true;
-        }
     }
 
     public interface CommandHandler {

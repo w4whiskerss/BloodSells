@@ -6,6 +6,26 @@ author: BloodWorth
 description: Simple Vault item worth and selling system.
 softdepend:
   - Vault
+commands:
+  bloodsells:
+    description: BloodSells main command.
+    usage: /bloodsells reload
+    aliases: [bsells]
+  sellhand:
+    description: Sell the stack in your main hand.
+    usage: /sellhand
+  sellgui:
+    description: Open the BloodSells sell GUI.
+    usage: /sellgui
+  sellall:
+    description: Sell every matching material in your inventory.
+    usage: /sellall <item>
+  sellhandall:
+    description: Sell every inventory item matching your hand.
+    usage: /sellhandall
+  worth:
+    description: Check or set item worth.
+    usage: /worth <set|info>
 permissions:
   bloodsells.use:
     default: true
