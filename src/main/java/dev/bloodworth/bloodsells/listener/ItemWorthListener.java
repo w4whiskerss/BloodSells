@@ -37,7 +37,7 @@ public final class ItemWorthListener implements Listener {
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onPickup(EntityPickupItemEvent event) {
         if (event.getEntity() instanceof Player player) {
-            plugin.getServer().getScheduler().runTask(plugin, () -> injectInventory(player.getInventory()));
+            plugin.getServer().getScheduler().runTask(plugin, () -> refreshInventory(player, player.getInventory()));
         }
     }
 
@@ -51,9 +51,9 @@ public final class ItemWorthListener implements Listener {
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onOpen(InventoryOpenEvent event) {
-        injectInventory(event.getInventory());
         if (event.getPlayer() instanceof Player player) {
-            injectInventory(player.getInventory());
+            refreshInventory(player, event.getInventory());
+            refreshInventory(player, player.getInventory());
         }
     }
 
@@ -66,9 +66,9 @@ public final class ItemWorthListener implements Listener {
         }
         stripInventory(event.getInventory());
         plugin.getServer().getScheduler().runTask(plugin, () -> {
-            injectInventory(event.getInventory());
             if (event.getWhoClicked() instanceof Player player) {
-                injectInventory(player.getInventory());
+                refreshInventory(player, event.getInventory());
+                refreshInventory(player, player.getInventory());
             }
         });
     }
@@ -81,9 +81,9 @@ public final class ItemWorthListener implements Listener {
             stripInventory(player.getInventory());
         }
         plugin.getServer().getScheduler().runTask(plugin, () -> {
-            injectInventory(event.getInventory());
             if (event.getWhoClicked() instanceof Player player) {
-                injectInventory(player.getInventory());
+                refreshInventory(player, event.getInventory());
+                refreshInventory(player, player.getInventory());
             }
         });
     }
@@ -110,6 +110,14 @@ public final class ItemWorthListener implements Listener {
         if (!plugin.bloodConfig().permanentLore()) {
             stripInventory(event.getPlayer().getInventory());
         }
+    }
+
+    private void refreshInventory(Player player, Inventory inventory) {
+        if (!plugin.displayPreferences().enabled(player.getUniqueId())) {
+            stripInventory(inventory);
+            return;
+        }
+        injectInventory(inventory);
     }
 
     private void injectInventory(Inventory inventory) {

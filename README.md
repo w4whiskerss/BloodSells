@@ -19,6 +19,7 @@ Worth : $<value>
 - `/sellall <item>`
 - `/sellgui`
 - `/bloodsells reload`
+- `/worthdisplay [on|off|toggle]`
 - Shulker support:
   - Filled shulker: sells contents only and returns the empty shulker
   - Empty shulker: sells the shulker itself if it is not blacklisted
@@ -67,6 +68,7 @@ items:
 | `/bloodsells reload` | `bloodsells.reload` |
 | `/worth set <item> <price>` | `bloodsells.worth.set` |
 | `/worth info <item>` | `bloodsells.worth.info` |
+| `/worthdisplay [on\|off\|toggle]` | `bloodsells.worthdisplay` |
 
 ## Build
 

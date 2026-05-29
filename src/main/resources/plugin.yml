@@ -26,6 +26,10 @@ commands:
   worth:
     description: Check or set item worth.
     usage: /worth <set|info>
+  worthdisplay:
+    description: Toggle your item worth lore display.
+    usage: /worthdisplay [on|off|toggle]
+    aliases: [worthlore]
 permissions:
   bloodsells.use:
     default: true
@@ -45,3 +49,5 @@ permissions:
     default: op
   bloodsells.worth.info:
     default: op
+  bloodsells.worthdisplay:
+    default: true

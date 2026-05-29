@@ -2,8 +2,10 @@ package dev.bloodworth.bloodsells;
 
 import dev.bloodworth.bloodsells.command.BloodSellsCommand;
 import dev.bloodworth.bloodsells.command.SellCommands;
+import dev.bloodworth.bloodsells.command.WorthDisplayCommand;
 import dev.bloodworth.bloodsells.command.WorthCommand;
 import dev.bloodworth.bloodsells.config.BloodConfig;
+import dev.bloodworth.bloodsells.display.WorthDisplayPreferences;
 import dev.bloodworth.bloodsells.economy.EconomyRegistry;
 import dev.bloodworth.bloodsells.gui.SellGuiListener;
 import dev.bloodworth.bloodsells.listener.ItemWorthListener;
@@ -25,6 +27,7 @@ public final class BloodSellsPlugin extends JavaPlugin {
     private WorthEngine worthEngine;
     private TransactionLogger transactionLogger;
     private SellService sellService;
+    private WorthDisplayPreferences displayPreferences;
 
     @Override
     public void onEnable() {
@@ -32,6 +35,7 @@ public final class BloodSellsPlugin extends JavaPlugin {
         if (!new File(getDataFolder(), "messages.yml").exists()) {
             saveResource("messages.yml", false);
         }
+        displayPreferences = new WorthDisplayPreferences(this);
         reloadSystems();
 
         registerCommands();
@@ -176,12 +180,14 @@ public final class BloodSellsPlugin extends JavaPlugin {
         SellCommands sellCommands = new SellCommands(this);
         WorthCommand worthCommand = new WorthCommand(this);
         BloodSellsCommand bloodSellsCommand = new BloodSellsCommand(this);
+        WorthDisplayCommand worthDisplayCommand = new WorthDisplayCommand(this);
         registerBukkitCommand("bloodsells", bloodSellsCommand);
         registerBukkitCommand("sellhand", sellCommands);
         registerBukkitCommand("sellgui", sellCommands);
         registerBukkitCommand("sellall", sellCommands);
         registerBukkitCommand("sellhandall", sellCommands);
         registerBukkitCommand("worth", worthCommand);
+        registerBukkitCommand("worthdisplay", worthDisplayCommand);
     }
 
     private void registerBukkitCommand(String name, CommandHandler handler) {
@@ -212,6 +218,10 @@ public final class BloodSellsPlugin extends JavaPlugin {
 
     public SellService sellService() {
         return sellService;
+    }
+
+    public WorthDisplayPreferences displayPreferences() {
+        return displayPreferences;
     }
 
     public interface CommandHandler {
